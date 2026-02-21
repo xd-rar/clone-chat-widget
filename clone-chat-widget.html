@@ -1297,15 +1297,21 @@
 
     const reverbBuf = generateReverb(2.2, 2.8);
 
+    function getSoundPath(filename) {
+      const devPath = path.join(__dirname, filename);
+      if (fs.existsSync(devPath)) return devPath;
+      const resPath = path.join(process.resourcesPath, 'sounds', filename);
+      if (fs.existsSync(resPath)) return resPath;
+      return devPath;
+    }
+
     function loadSound(filename) {
       return new Promise((resolve, reject) => {
         if (soundCache[filename]) return resolve(soundCache[filename]);
-        const p = path.join(__dirname, filename);
+        const p = getSoundPath(filename);
         fs.readFile(p, (err, data) => {
           if (err) return reject(err);
-          const fresh = new ArrayBuffer(data.length);
-          const view = new Uint8Array(fresh);
-          for (let i = 0; i < data.length; i++) view[i] = data[i];
+          const fresh = new Uint8Array(data).buffer;
           audioCtx.decodeAudioData(fresh).then(decoded => {
             soundCache[filename] = decoded;
             resolve(decoded);
