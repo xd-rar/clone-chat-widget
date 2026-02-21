@@ -184,11 +184,12 @@ clone-chat-widget/
 ├── main.js                    # Electron main process (splash → main window)
 ├── splash.html                # Animated splash screen
 ├── clone-chat-widget.html     # Chat widget (UI + logic + audio engine)
-├── startup.wav                # Startup sound effect
-├── send.wav                   # Message send sound effect
-├── receive.wav                # Message receive sound effect
-├── hover.wav                  # Button hover sound effect
-├── click.wav                  # Button click sound effect
+├── sounds/                    # Sound effects
+│   ├── startup.wav            #   App ready sound
+│   ├── send.wav               #   Message send sound
+│   ├── receive.wav            #   Message receive sound
+│   ├── hover.wav              #   Button hover sound
+│   └── click.wav              #   Button click sound
 ├── icon.png                   # App icon (PNG)
 ├── icon.ico                   # App icon (Windows ICO)
 ├── package.json               # Dependencies, scripts, build config

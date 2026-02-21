@@ -14,20 +14,12 @@
     "files": [
       "main.js",
       "splash.html",
-      "startup.wav",
-      "send.wav",
-      "receive.wav",
-      "hover.wav",
-      "click.wav",
+      "sounds/**",
       "clone-chat-widget.html",
       "package.json"
     ],
     "extraResources": [
-      { "from": "startup.wav", "to": "sounds/startup.wav" },
-      { "from": "send.wav", "to": "sounds/send.wav" },
-      { "from": "receive.wav", "to": "sounds/receive.wav" },
-      { "from": "hover.wav", "to": "sounds/hover.wav" },
-      { "from": "click.wav", "to": "sounds/click.wav" }
+      { "from": "sounds/", "to": "sounds/" }
     ],
     "win": {
       "target": "dir",

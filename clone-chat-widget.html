@@ -1298,7 +1298,7 @@
     const reverbBuf = generateReverb(2.2, 2.8);
 
     function getSoundPath(filename) {
-      const devPath = path.join(__dirname, filename);
+      const devPath = path.join(__dirname, 'sounds', filename);
       if (fs.existsSync(devPath)) return devPath;
       const resPath = path.join(process.resourcesPath, 'sounds', filename);
       if (fs.existsSync(resPath)) return resPath;
