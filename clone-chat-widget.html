@@ -1,0 +1,2612 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'MS Sans Serif', 'Microsoft Sans Serif', sans-serif;
+      background: transparent;
+      overflow: hidden;
+      -webkit-app-region: drag;
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    @keyframes window-entrance {
+      0% {
+        transform: scale(0.8) translateY(20px);
+        opacity: 0;
+      }
+      60% {
+        transform: scale(1.05) translateY(-5px);
+      }
+      100% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .window {
+      width: 100%;
+      height: 100%;
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #ffffff #000000 #000000 #ffffff;
+      display: flex;
+      flex-direction: column;
+      animation: window-entrance 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+    }
+    
+    /* Corner brackets - MGS style */
+    .window::before,
+    .window::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #39ff14;
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0.6;
+    }
+    
+    .window::before {
+      top: 0;
+      left: 0;
+      border-right: none;
+      border-bottom: none;
+    }
+    
+    .window::after {
+      bottom: 0;
+      right: 0;
+      border-left: none;
+      border-top: none;
+    }
+    
+    .title-bar {
+      background: linear-gradient(90deg, #9acd32, #39ff14);
+      padding: 4px 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      -webkit-app-region: drag;
+      cursor: move;
+      position: relative;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+    
+    @keyframes slow-shimmer {
+      0% { 
+        transform: translateX(-150%) rotate(-45deg) scale(1);
+        opacity: 0.2;
+      }
+      50% {
+        opacity: 0.6;
+      }
+      100% { 
+        transform: translateX(250%) rotate(-45deg) scale(1.5);
+        opacity: 0.2;
+      }
+    }
+    
+    .title-bar::after {
+      content: '';
+      position: absolute;
+      top: -100%;
+      left: 0;
+      width: 80%;
+      height: 300%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+      animation: slow-shimmer 6s infinite;
+      pointer-events: none;
+    }
+    
+    .title-text {
+      color: white;
+      font-weight: bold;
+      font-size: 14px;
+      padding-left: 3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 1;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+      letter-spacing: 0.5px;
+    }
+    
+    @keyframes emoji-bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+    
+    .title-text span:first-child {
+      animation: emoji-bounce 2s ease-in-out infinite;
+      display: inline-block;
+      font-size: 16px;
+    }
+    
+    /* Status LED next to title */
+    .title-text::after {
+      content: '';
+      width: 7px;
+      height: 7px;
+      background: #39ff14;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #39ff14;
+      animation: led-pulse 2s ease-in-out infinite;
+      margin-left: 6px;
+    }
+    
+    @keyframes led-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    
+    .title-buttons {
+      display: flex;
+      gap: 2px;
+      -webkit-app-region: no-drag;
+      z-index: 1;
+    }
+    
+    .title-button {
+      width: 16px;
+      height: 14px;
+      background: #c0c0c0;
+      border: 1px solid;
+      border-color: #ffffff #000000 #000000 #ffffff;
+      font-size: 9px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding-bottom: 2px;
+      transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    .title-button:hover {
+      transform: scale(1.15);
+    }
+    
+    .title-button:active {
+      border-color: #000000 #ffffff #ffffff #000000;
+      padding-top: 2px;
+      padding-bottom: 0;
+      transform: scale(0.95);
+    }
+    
+    .content {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      padding: 2px;
+      padding-bottom: 2px;
+      -webkit-app-region: no-drag;
+      position: relative;
+      min-height: 0;
+      max-height: 100%;
+      overflow: hidden;
+    }
+    
+    /* Scanline overlay — disabled, grid is on chat-display only */
+    
+    .input-area {
+      display: flex;
+      gap: 4px;
+      position: relative;
+      flex: 0 0 auto;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+    }
+    
+    .input-row {
+      display: flex;
+      gap: 4px;
+      flex: 1 1 100%;
+    }
+    
+    .button-row {
+      display: flex;
+      gap: 4px;
+      flex: 1 1 100%;
+    }
+    
+    .small-button {
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #ffffff #000000 #000000 #ffffff;
+      padding: 2px 8px;
+      font-family: 'MS Sans Serif', sans-serif;
+      font-size: 9px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .small-button:hover {
+      background: #d0d0d0;
+      transform: scale(1.05);
+    }
+    
+    .small-button:active {
+      border-color: #000000 #ffffff #ffffff #000000;
+      padding-top: 4px;
+      padding-bottom: 0;
+    }
+    
+    .image-preview {
+      max-width: 100%;
+      max-height: 150px;
+      margin: 4px 0;
+      border: 2px solid;
+      border-color: #808080 #ffffff #ffffff #808080;
+      display: none;
+    }
+    
+    .image-preview.visible {
+      display: block;
+    }
+    
+    /* Drag and drop zone */
+    .input-box.drag-over {
+      background: #e8ffe8;
+      border: 2px dashed #39ff14;
+      box-shadow: 0 0 15px rgba(57, 255, 20, 0.5);
+    }
+    
+    #imagePreviewContainer {
+      position: relative;
+      display: none;
+      margin: 4px 0;
+      width: 100%;
+    }
+    
+    #imagePreviewContainer.visible {
+      display: block;
+    }
+    
+    #imagePreviewContainer img.image-preview {
+      display: block;
+      max-width: 100%;
+      max-height: 150px;
+      border: 2px solid;
+      border-color: #808080 #ffffff #ffffff #808080;
+    }
+    
+    #imagePreviewContainer .remove-image {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      background: #ff4444;
+      color: white;
+      border: 1px solid #000;
+      width: 18px;
+      height: 18px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+      transition: opacity 0.2s;
+    }
+    
+    #imagePreviewContainer .remove-image:hover {
+      background: #ff0000;
+    }
+    
+    /* Paste indicator */
+    .paste-indicator {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(57, 255, 20, 0.9);
+      color: white;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: bold;
+      border-radius: 4px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 100;
+    }
+    
+    .paste-indicator.visible {
+      opacity: 1;
+    }
+    
+    /* Hex detail next to input */
+    .input-area::before {
+      content: '⬡';
+      position: absolute;
+      left: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #39ff14;
+      font-size: 10px;
+      opacity: 0.5;
+    }
+    
+    .input-box {
+      flex: 1;
+      background: white;
+      border: 2px solid;
+      border-color: #808080 #ffffff #ffffff #808080;
+      padding: 2px 4px;
+      font-family: 'MS Sans Serif', sans-serif;
+      font-size: 11px;
+      transition: transform 0.2s;
+    }
+    
+    .input-box:focus {
+      outline: 1px dotted #000;
+      outline-offset: -3px;
+      transform: scale(1.02);
+      box-shadow: 0 0 5px rgba(57, 255, 20, 0.2);
+    }
+    
+    .input-box:disabled {
+      background: #e0e0e0;
+      color: #808080;
+    }
+    
+    @keyframes fast-wiggle {
+      0%, 100% { transform: rotate(0deg); }
+      10% { transform: rotate(-3deg); }
+      20% { transform: rotate(3deg); }
+      30% { transform: rotate(-3deg); }
+      40% { transform: rotate(3deg); }
+      50% { transform: rotate(-2deg); }
+      60% { transform: rotate(2deg); }
+      70% { transform: rotate(-1deg); }
+      80% { transform: rotate(1deg); }
+      90% { transform: rotate(-0.5deg); }
+    }
+    
+    @keyframes button-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    .send-button {
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #ffffff #000000 #000000 #ffffff;
+      padding: 2px 12px;
+      font-family: 'MS Sans Serif', sans-serif;
+      font-size: 11px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+      min-width: 60px;
+    }
+    
+    .send-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    @keyframes button-slow-shine {
+      0% { 
+        transform: translateX(-150%) rotate(-45deg);
+        opacity: 0.3;
+      }
+      50% {
+        opacity: 0.8;
+      }
+      100% { 
+        transform: translateX(250%) rotate(-45deg);
+        opacity: 0.3;
+      }
+    }
+    
+    .send-button::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+      transform: translateX(-100%) rotate(-45deg);
+      transition: transform 0.3s;
+    }
+    
+    .send-button.has-text:not(:disabled) {
+      animation: button-pulse 1s ease-in-out infinite;
+      box-shadow: 0 0 10px rgba(57, 255, 20, 0.5);
+    }
+    
+    .send-button:hover:not(:disabled) {
+      background: linear-gradient(135deg, #9acd32, #39ff14);
+      color: white;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+      animation: fast-wiggle 0.5s ease-in-out;
+      transform: scale(1.05);
+    }
+    
+    .send-button:hover:not(:disabled)::after {
+      animation: button-slow-shine 3s infinite;
+    }
+    
+    .send-button:active:not(:disabled) {
+      border-color: #000000 #ffffff #ffffff #000000;
+      padding-top: 4px;
+      padding-bottom: 0;
+      transform: scale(0.95);
+    }
+    
+    .status-bar {
+      background: #c0c0c0;
+      border-top: 1px solid #ffffff;
+      border-bottom: 1px solid #808080;
+      padding: 2px 4px;
+      font-size: 10px;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      position: relative;
+      flex: 0 0 auto;
+      margin-bottom: 4px;
+    }
+    
+    /* Status bar tech details */
+    .status-bar::before {
+      content: '//SYS';
+      position: absolute;
+      left: 4px;
+      top: -10px;
+      font-size: 7px;
+      color: #39ff14;
+      font-family: monospace;
+      opacity: 0.5;
+    }
+    
+    .status-section {
+      border: 1px solid;
+      border-color: #808080 #ffffff #ffffff #808080;
+      padding: 1px 4px;
+      flex: 1;
+      transition: all 0.3s;
+      position: relative;
+      font-family: monospace;
+      font-size: 9px;
+    }
+    
+    /* Small status dots */
+    .status-section::before {
+      content: '●';
+      margin-right: 4px;
+      font-size: 8px;
+    }
+    
+    .status-section.connected::before {
+      color: #39ff14;
+      animation: led-pulse 2s ease-in-out infinite;
+    }
+    
+    .status-section.disconnected::before {
+      color: #ff0000;
+      animation: led-pulse 1s ease-in-out infinite;
+    }
+    
+    .status-section.working::before {
+      color: #ffa500;
+      animation: led-pulse 0.5s ease-in-out infinite;
+    }
+    
+    @keyframes status-glow {
+      0%, 100% { background: #c0c0c0; }
+      50% { background: #d0ffd0; }
+    }
+    
+    .status-section.active {
+      animation: status-glow 1s ease-in-out infinite;
+    }
+    
+    .chat-display {
+      flex: 1;
+      height: 100%;
+      background: white;
+      border: 2px solid;
+      border-color: #808080 #808080 #ffffff #808080;
+      box-shadow: inset 1px 1px 0 #000000, inset -1px -1px 0 #ffffff;
+      padding: 4px;
+      padding-top: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      font-size: 11px;
+      scroll-behavior: smooth;
+      position: relative;
+      border-right: none;
+    }
+    
+    /* Tech grid overlay — horizontal rows only */
+    .chat-display::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 16px;
+      bottom: 0;
+      background-image: linear-gradient(rgba(57, 255, 20, 0.02) 1px, transparent 1px);
+      background-size: 100% 20px;
+      pointer-events: none;
+    }
+    
+    @keyframes message-pop {
+      0% {
+        transform: translateY(-20px) scale(0.95);
+        opacity: 0;
+      }
+      60% {
+        transform: translateY(5px) scale(1.02);
+      }
+      100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+    
+    .message {
+      margin-bottom: 8px;
+      margin-top: 4px;
+      line-height: 1.4;
+      animation: message-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform-origin: top center;
+      position: relative;
+      padding-left: 8px;
+    }
+    
+    .message:first-child {
+      margin-top: 8px;
+    }
+    
+    /* Message indicator bar */
+    .message::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 2px;
+      width: 3px;
+      height: calc(100% - 4px);
+      background: currentColor;
+      opacity: 0.3;
+    }
+    
+    .message-user {
+      color: #6b8e23;
+      font-weight: bold;
+    }
+    
+    .message-assistant {
+      color: #228b22;
+    }
+    
+    .message-error {
+      color: #cc0000;
+      font-weight: bold;
+    }
+    
+    @keyframes typing-dot {
+      0%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-5px); }
+    }
+    
+    .typing-indicator {
+      display: inline-flex;
+      gap: 2px;
+      align-items: center;
+    }
+    
+    .typing-dot {
+      width: 4px;
+      height: 4px;
+      background: #228b22;
+      border-radius: 50%;
+      display: inline-block;
+      animation: typing-dot 1.4s infinite;
+    }
+    
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    
+    /* Custom scrollbar module */
+    .chat-wrapper {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 100px;
+      max-height: 100%;
+      display: flex;
+    }
+    
+    .custom-scrollbar {
+      width: 16px;
+      background: #c0c0c0;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      border-left: 1px solid #808080;
+    }
+    
+    .sb-btn {
+      width: 16px;
+      height: 16px;
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #ffffff #000000 #000000 #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 6px;
+      color: #000;
+      padding: 0;
+      flex-shrink: 0;
+      user-select: none;
+    }
+    
+    .sb-btn:hover {
+      background: #d0d0d0;
+    }
+    
+    .sb-btn:active {
+      border-color: #000000 #ffffff #ffffff #000000;
+    }
+    
+    .sb-btn.disabled {
+      color: #a0a0a0;
+      cursor: default;
+    }
+    
+    .sb-btn.disabled:hover {
+      background: #c0c0c0;
+    }
+    
+    .sb-btn.disabled:active {
+      border-color: #ffffff #000000 #000000 #ffffff;
+    }
+    
+    .sb-track {
+      flex: 1;
+      background: #c0c0c0;
+      position: relative;
+      background-image: repeating-conic-gradient(#b0b0b0 0% 25%, #c0c0c0 0% 50%);
+      background-size: 2px 2px;
+    }
+    
+    .sb-thumb {
+      position: absolute;
+      left: 0;
+      right: 0;
+      min-height: 16px;
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #ffffff #000000 #000000 #ffffff;
+      cursor: pointer;
+    }
+    
+    .sb-thumb:hover {
+      background: #d0d0d0;
+    }
+    
+    .settings-btn {
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #ffffff #000000 #000000 #ffffff;
+      padding: 2px 10px;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: bold;
+      font-family: 'MS Sans Serif', sans-serif;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .settings-btn::before {
+      content: '⚙';
+      font-size: 10px;
+    }
+    
+    .settings-btn:hover {
+      background: #d0d0d0;
+      transform: scale(1.05);
+    }
+    
+    .settings-btn:active {
+      border-color: #000000 #ffffff #ffffff #000000;
+      padding-top: 4px;
+      padding-bottom: 0;
+    }
+
+    @keyframes config-pulse {
+      0%, 100% {
+        box-shadow: 0 0 4px rgba(57, 255, 20, 0.3);
+        background: #c0c0c0;
+      }
+      50% {
+        box-shadow: 0 0 12px rgba(57, 255, 20, 0.8);
+        background: #d8ffd0;
+      }
+    }
+
+    .settings-btn.needs-setup {
+      animation: config-pulse 1.5s ease-in-out infinite;
+      border-color: #39ff14 #006400 #006400 #39ff14;
+    }
+    
+    /* Customize panel */
+    .customize-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      z-index: 10001;
+      backdrop-filter: blur(4px);
+      overflow-y: auto;
+      padding: 20px 0;
+    }
+    
+    .customize-panel.visible {
+      display: flex;
+    }
+    
+    .customize-window {
+      width: 360px;
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #ffffff #000000 #000000 #ffffff;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      margin: auto;
+    }
+    
+    .customize-title {
+      background: linear-gradient(90deg, var(--title-grad-1, #9acd32), var(--title-grad-2, #39ff14));
+      padding: 4px 8px;
+      color: white;
+      font-weight: bold;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+    
+    .customize-body {
+      padding: 8px 12px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    
+    .cust-section {
+      margin-bottom: 8px;
+      border: 1px solid #808080;
+      padding: 6px;
+      background: #d4d4d4;
+    }
+    
+    .cust-section-title {
+      font-size: 9px;
+      font-weight: bold;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .cust-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 5px;
+    }
+    
+    .cust-label {
+      font-size: 9px;
+      font-weight: bold;
+      min-width: 90px;
+      flex-shrink: 0;
+    }
+    
+    .cust-color-input {
+      width: 24px;
+      height: 18px;
+      border: 1px solid #000;
+      padding: 0;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    
+    .cust-hex-input {
+      width: 65px;
+      background: white;
+      border: 2px solid;
+      border-color: #808080 #ffffff #ffffff #808080;
+      padding: 1px 3px;
+      font-family: monospace;
+      font-size: 9px;
+    }
+    
+    .cust-text-input {
+      flex: 1;
+      background: white;
+      border: 2px solid;
+      border-color: #808080 #ffffff #ffffff #808080;
+      padding: 2px 4px;
+      font-family: 'MS Sans Serif', sans-serif;
+      font-size: 10px;
+    }
+    
+    .cust-buttons {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+      padding: 8px 12px;
+      border-top: 1px solid #808080;
+    }
+
+    .settings-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      backdrop-filter: blur(4px);
+    }
+    
+    .settings-panel.visible {
+      display: flex;
+    }
+    
+    .settings-window {
+      width: 320px;
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #ffffff #000000 #000000 #ffffff;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    }
+    
+    .settings-title {
+      background: linear-gradient(90deg, #9acd32, #39ff14);
+      padding: 4px 8px;
+      color: white;
+      font-weight: bold;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+    
+    .settings-content {
+      padding: 12px;
+    }
+    
+    .settings-field {
+      margin-bottom: 10px;
+    }
+    
+    .settings-label {
+      display: block;
+      font-size: 10px;
+      font-weight: bold;
+      margin-bottom: 4px;
+      color: #000;
+    }
+    
+    .settings-input {
+      width: 100%;
+      background: white;
+      border: 2px solid;
+      border-color: #808080 #ffffff #ffffff #808080;
+      padding: 3px 4px;
+      font-family: 'MS Sans Serif', sans-serif;
+      font-size: 10px;
+    }
+    
+    .settings-input:focus {
+      outline: 1px dotted #000;
+      outline-offset: -3px;
+    }
+    
+    .settings-buttons {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 12px;
+    }
+    
+    .settings-button {
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #ffffff #000000 #000000 #ffffff;
+      padding: 4px 16px;
+      font-family: 'MS Sans Serif', sans-serif;
+      font-size: 11px;
+      font-weight: bold;
+      cursor: pointer;
+      min-width: 75px;
+    }
+    
+    .settings-button:hover {
+      background: #d0d0d0;
+    }
+    
+    .settings-button:active {
+      border-color: #000000 #ffffff #ffffff #000000;
+      padding-top: 6px;
+      padding-bottom: 2px;
+    }
+    
+    .settings-button.primary {
+      background: linear-gradient(180deg, #9acd32, #39ff14);
+      color: white;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
+    
+    @keyframes click-ripple {
+      0% {
+        transform: scale(0);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(2);
+        opacity: 0;
+      }
+    }
+    
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.6);
+      width: 20px;
+      height: 20px;
+      animation: click-ripple 0.6s;
+      pointer-events: none;
+    }
+    
+    @keyframes sparkle {
+      0%, 100% { 
+        transform: scale(0) rotate(0deg);
+        opacity: 0;
+      }
+      50% { 
+        transform: scale(1) rotate(180deg);
+        opacity: 1;
+      }
+    }
+    
+    .sparkle {
+      position: absolute;
+      color: #39ff14;
+      font-size: 12px;
+      pointer-events: none;
+      animation: sparkle 0.8s ease-out;
+    }
+    
+    /* Hide native scrollbar */
+    .chat-display::-webkit-scrollbar {
+      width: 0;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="window">
+    <div class="title-bar">
+      <div class="title-text">
+        <span>🧩</span>
+        <span>XD Clone Chat</span>
+      </div>
+      <div class="title-buttons">
+        <div class="title-button" onclick="minimizeWindow()">_</div>
+        <div class="title-button" onclick="maximizeWindow()">□</div>
+        <div class="title-button close" onclick="closeWindow()">×</div>
+      </div>
+    </div>
+    
+    <div class="content">
+      <div class="input-area" id="inputArea">
+        <div class="paste-indicator" id="pasteIndicator">🖼️ Image Pasted!</div>
+        <div class="input-row">
+          <input 
+            type="text" 
+            class="input-box" 
+            id="input" 
+            placeholder="Type here..."
+            onkeypress="if(event.key==='Enter') sendMessage()"
+            oninput="updateSendButton()"
+          />
+          <button class="send-button" id="sendBtn" onclick="sendMessage()">Send</button>
+        </div>
+        <div class="button-row">
+          <button class="small-button" onclick="document.getElementById('imageInput').click()">📎 Upload Image</button>
+          <button class="small-button" onclick="openDashboard()">🌐 Dashboard</button>
+          <button class="small-button" onclick="openGatewayScript()">🚀 Gateway</button>
+          <button class="small-button" onclick="toggleCustomize()">🎨 Customize</button>
+          <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)" />
+        </div>
+        <div id="imagePreviewContainer" style="display:none; width:100%;">
+          <img id="imagePreview" style="max-width:100%; max-height:120px; border:2px solid #808080;" alt="Preview" />
+          <span onclick="clearImage()" style="cursor:pointer; color:red; font-size:12px; margin-left:8px;">[x]</span>
+        </div>
+      </div>
+      
+      <div class="status-bar">
+        <div class="status-section disconnected" id="connectionStatus" title="Gateway connection">CONNECTING...</div>
+        <div class="status-section" id="status" title="Agent activity">IDLE</div>
+        <button class="settings-btn" onclick="toggleSettings()" title="Gateway Settings">CONFIG</button>
+      </div>
+      
+      <div class="chat-wrapper">
+        <div class="chat-display" id="chat"></div>
+        <div class="custom-scrollbar" id="customScrollbar">
+          <div class="sb-btn disabled" id="sbTop" title="Jump to top">▲</div>
+          <div class="sb-btn" id="sbUp" title="Scroll up">▴</div>
+          <div class="sb-track" id="sbTrack">
+            <div class="sb-thumb" id="sbThumb"></div>
+          </div>
+          <div class="sb-btn" id="sbDown" title="Scroll down">▾</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-window" style="width:360px;">
+          <div class="settings-title">
+            <span>⚙ Gateway Configuration</span>
+            <span style="cursor: pointer;" onclick="toggleSettings()">×</span>
+          </div>
+          <div class="settings-content" style="max-height:70vh; overflow-y:auto;">
+            <div style="font-size:9px; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px; border-bottom:1px solid #808080; padding-bottom:3px;">Connection</div>
+            <div class="settings-field">
+              <label class="settings-label">Gateway WebSocket URL:</label>
+              <input type="text" class="settings-input" id="settingsUrl" placeholder="ws://127.0.0.1:18789" />
+            </div>
+            <div class="settings-field">
+              <label class="settings-label">Agent ID:</label>
+              <input type="text" class="settings-input" id="settingsAgent" placeholder="main" />
+            </div>
+            <div class="settings-field">
+              <label class="settings-label">Gateway Token (optional):</label>
+              <input type="password" class="settings-input" id="settingsToken" placeholder="From ~/.openclaw/openclaw.json" />
+            </div>
+            <div class="settings-field">
+              <label class="settings-label">Session Key (optional, auto-generated if blank):</label>
+              <input type="text" class="settings-input" id="settingsSessionKey" placeholder="agent:main:main" />
+            </div>
+
+            <div style="font-size:9px; font-weight:bold; text-transform:uppercase; letter-spacing:0.5px; margin:10px 0 6px; border-bottom:1px solid #808080; padding-bottom:3px;">Startup</div>
+            <div class="settings-field">
+              <label class="settings-label" style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                <input type="checkbox" id="settingsAutoConnect" style="margin:0;" />
+                Auto-detect local OpenClaw on startup
+              </label>
+            </div>
+            <div class="settings-field">
+              <label class="settings-label">Gateway Script Path (for "Gateway" button):</label>
+              <input type="text" class="settings-input" id="settingsGatewayPath" placeholder="C:\path\to\start-openclaw-gateway.bat" />
+            </div>
+
+            <div class="settings-buttons">
+              <button class="settings-button" onclick="openReadme()" title="Open README">? Help</button>
+              <button class="settings-button" onclick="toggleSettings()">Cancel</button>
+              <button class="settings-button primary" onclick="saveSettings()">Save & Reconnect</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="customize-panel" id="customizePanel">
+        <div class="customize-window">
+          <div class="customize-title">
+            <span>🎨 Customize Appearance</span>
+            <span style="cursor:pointer;" onclick="toggleCustomize()">×</span>
+          </div>
+          <div class="customize-body">
+
+            <div class="cust-section">
+              <div class="cust-section-title">Title Bar</div>
+              <div class="cust-row">
+                <span class="cust-label">Title Text:</span>
+                <input type="text" class="cust-text-input" id="custTitleText" value="XD Clone Chat" />
+              </div>
+              <div class="cust-row">
+                <span class="cust-label">Gradient Left:</span>
+                <input type="color" class="cust-color-input" id="custTitleGrad1" value="#9acd32" />
+                <input type="text" class="cust-hex-input" id="custTitleGrad1Hex" value="#9acd32" maxlength="7" />
+              </div>
+              <div class="cust-row">
+                <span class="cust-label">Gradient Right:</span>
+                <input type="color" class="cust-color-input" id="custTitleGrad2" value="#39ff14" />
+                <input type="text" class="cust-hex-input" id="custTitleGrad2Hex" value="#39ff14" maxlength="7" />
+              </div>
+              <div class="cust-row">
+                <span class="cust-label">Title Text Color:</span>
+                <input type="color" class="cust-color-input" id="custTitleTextColor" value="#ffffff" />
+                <input type="text" class="cust-hex-input" id="custTitleTextColorHex" value="#ffffff" maxlength="7" />
+              </div>
+            </div>
+
+            <div class="cust-section">
+              <div class="cust-section-title">Window</div>
+              <div class="cust-row">
+                <span class="cust-label">Window BG:</span>
+                <input type="color" class="cust-color-input" id="custWindowBg" value="#c0c0c0" />
+                <input type="text" class="cust-hex-input" id="custWindowBgHex" value="#c0c0c0" maxlength="7" />
+              </div>
+              <div class="cust-row">
+                <span class="cust-label">Status Bar BG:</span>
+                <input type="color" class="cust-color-input" id="custStatusBg" value="#c0c0c0" />
+                <input type="text" class="cust-hex-input" id="custStatusBgHex" value="#c0c0c0" maxlength="7" />
+              </div>
+            </div>
+
+            <div class="cust-section">
+              <div class="cust-section-title">Chat Area</div>
+              <div class="cust-row">
+                <span class="cust-label">Chat BG:</span>
+                <input type="color" class="cust-color-input" id="custChatBg" value="#ffffff" />
+                <input type="text" class="cust-hex-input" id="custChatBgHex" value="#ffffff" maxlength="7" />
+              </div>
+              <div class="cust-row">
+                <span class="cust-label">User Text:</span>
+                <input type="color" class="cust-color-input" id="custUserText" value="#6b8e23" />
+                <input type="text" class="cust-hex-input" id="custUserTextHex" value="#6b8e23" maxlength="7" />
+              </div>
+              <div class="cust-row">
+                <span class="cust-label">Bot Text:</span>
+                <input type="color" class="cust-color-input" id="custBotText" value="#228b22" />
+                <input type="text" class="cust-hex-input" id="custBotTextHex" value="#228b22" maxlength="7" />
+              </div>
+              <div class="cust-row">
+                <span class="cust-label">System Text:</span>
+                <input type="color" class="cust-color-input" id="custSystemText" value="#cc0000" />
+                <input type="text" class="cust-hex-input" id="custSystemTextHex" value="#cc0000" maxlength="7" />
+              </div>
+              <div class="cust-row">
+                <span class="cust-label">Timestamp:</span>
+                <input type="color" class="cust-color-input" id="custTimestamp" value="#666666" />
+                <input type="text" class="cust-hex-input" id="custTimestampHex" value="#666666" maxlength="7" />
+              </div>
+            </div>
+
+            <div class="cust-section">
+              <div class="cust-section-title">Input Area</div>
+              <div class="cust-row">
+                <span class="cust-label">Input BG:</span>
+                <input type="color" class="cust-color-input" id="custInputBg" value="#ffffff" />
+                <input type="text" class="cust-hex-input" id="custInputBgHex" value="#ffffff" maxlength="7" />
+              </div>
+              <div class="cust-row">
+                <span class="cust-label">Input Text:</span>
+                <input type="color" class="cust-color-input" id="custInputText" value="#000000" />
+                <input type="text" class="cust-hex-input" id="custInputTextHex" value="#000000" maxlength="7" />
+              </div>
+              <div class="cust-row">
+                <span class="cust-label">Input Border:</span>
+                <input type="color" class="cust-color-input" id="custInputBorder" value="#808080" />
+                <input type="text" class="cust-hex-input" id="custInputBorderHex" value="#808080" maxlength="7" />
+              </div>
+            </div>
+
+            <div class="cust-section">
+              <div class="cust-section-title">Buttons</div>
+              <div class="cust-row">
+                <span class="cust-label">Button BG:</span>
+                <input type="color" class="cust-color-input" id="custButtonBg" value="#c0c0c0" />
+                <input type="text" class="cust-hex-input" id="custButtonBgHex" value="#c0c0c0" maxlength="7" />
+              </div>
+              <div class="cust-row">
+                <span class="cust-label">Button Text:</span>
+                <input type="color" class="cust-color-input" id="custButtonText" value="#000000" />
+                <input type="text" class="cust-hex-input" id="custButtonTextHex" value="#000000" maxlength="7" />
+              </div>
+              <div class="cust-row">
+                <span class="cust-label">Send Button BG:</span>
+                <input type="color" class="cust-color-input" id="custSendBg" value="#c0c0c0" />
+                <input type="text" class="cust-hex-input" id="custSendBgHex" value="#c0c0c0" maxlength="7" />
+              </div>
+              <div class="cust-row">
+                <span class="cust-label">Send Button Text:</span>
+                <input type="color" class="cust-color-input" id="custSendText" value="#000000" />
+                <input type="text" class="cust-hex-input" id="custSendTextHex" value="#000000" maxlength="7" />
+              </div>
+            </div>
+
+            <div class="cust-section">
+              <div class="cust-section-title">Scrollbar</div>
+              <div class="cust-row">
+                <span class="cust-label">Track BG:</span>
+                <input type="color" class="cust-color-input" id="custScrollTrack" value="#c0c0c0" />
+                <input type="text" class="cust-hex-input" id="custScrollTrackHex" value="#c0c0c0" maxlength="7" />
+              </div>
+              <div class="cust-row">
+                <span class="cust-label">Thumb:</span>
+                <input type="color" class="cust-color-input" id="custScrollThumb" value="#c0c0c0" />
+                <input type="text" class="cust-hex-input" id="custScrollThumbHex" value="#c0c0c0" maxlength="7" />
+              </div>
+              <div class="cust-row">
+                <span class="cust-label">Scroll Btns:</span>
+                <input type="color" class="cust-color-input" id="custScrollBtnBg" value="#c0c0c0" />
+                <input type="text" class="cust-hex-input" id="custScrollBtnBgHex" value="#c0c0c0" maxlength="7" />
+              </div>
+            </div>
+
+          </div>
+          <div class="cust-buttons">
+            <button class="settings-button" onclick="resetCustomization()">Reset</button>
+            <button class="settings-button" onclick="toggleCustomize()">Cancel</button>
+            <button class="settings-button primary" onclick="applyAndSaveCustomization()">Apply</button>
+          </div>
+        </div>
+      </div>
+  </div>
+  
+  <script>
+    const remote = require('@electron/remote');
+    const { shell } = require('electron');
+    const crypto = require('crypto');
+    const fs = require('fs');
+    const path = require('path');
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const soundCache = {};
+
+    function generateReverb(duration, decay) {
+      const rate = audioCtx.sampleRate;
+      const len = rate * duration;
+      const buf = audioCtx.createBuffer(2, len, rate);
+      for (let ch = 0; ch < 2; ch++) {
+        const data = buf.getChannelData(ch);
+        for (let i = 0; i < len; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+        }
+      }
+      return buf;
+    }
+
+    const reverbBuf = generateReverb(2.2, 2.8);
+
+    function loadSound(filename) {
+      return new Promise((resolve, reject) => {
+        if (soundCache[filename]) return resolve(soundCache[filename]);
+        const p = path.join(__dirname, filename);
+        fs.readFile(p, (err, data) => {
+          if (err) return reject(err);
+          const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+          audioCtx.decodeAudioData(ab, (decoded) => {
+            soundCache[filename] = decoded;
+            resolve(decoded);
+          }, reject);
+        });
+      });
+    }
+
+    function playSound(filename) {
+      loadSound(filename).then(buffer => {
+        const src = audioCtx.createBufferSource();
+        src.buffer = buffer;
+
+        const hiPass = audioCtx.createBiquadFilter();
+        hiPass.type = 'highpass';
+        hiPass.frequency.value = 300;
+        hiPass.Q.value = 0.7;
+
+        const hiShelf = audioCtx.createBiquadFilter();
+        hiShelf.type = 'highshelf';
+        hiShelf.frequency.value = 4000;
+        hiShelf.gain.value = 3;
+
+        const midPeak = audioCtx.createBiquadFilter();
+        midPeak.type = 'peaking';
+        midPeak.frequency.value = 3200;
+        midPeak.Q.value = 1.4;
+        midPeak.gain.value = 4.5;
+
+        const delay = audioCtx.createDelay(1.0);
+        delay.delayTime.value = 0.18;
+
+        const feedback = audioCtx.createGain();
+        feedback.gain.value = 0.18;
+
+        const delayWet = audioCtx.createGain();
+        delayWet.gain.value = 0.2;
+
+        delay.connect(feedback);
+        feedback.connect(delay);
+        delay.connect(delayWet);
+
+        const reverb = audioCtx.createConvolver();
+        reverb.buffer = reverbBuf;
+
+        const reverbWet = audioCtx.createGain();
+        reverbWet.gain.value = 0.35;
+
+        const dry = audioCtx.createGain();
+        dry.gain.value = 0.55;
+
+        const master = audioCtx.createGain();
+        master.gain.value = 0.8;
+
+        src.connect(hiPass);
+        hiPass.connect(hiShelf);
+        hiShelf.connect(midPeak);
+
+        midPeak.connect(dry);
+        midPeak.connect(delay);
+        midPeak.connect(reverb);
+
+        dry.connect(master);
+        delayWet.connect(master);
+        reverb.connect(reverbWet);
+        reverbWet.connect(master);
+
+        master.connect(audioCtx.destination);
+        src.start(0);
+      }).catch(() => {});
+    }
+
+    // Lightweight version for rapid UI sounds (no delay/reverb)
+    function playUISound(filename) {
+      loadSound(filename).then(buffer => {
+        const src = audioCtx.createBufferSource();
+        src.buffer = buffer;
+
+        const hiPass = audioCtx.createBiquadFilter();
+        hiPass.type = 'highpass';
+        hiPass.frequency.value = 300;
+        hiPass.Q.value = 0.7;
+
+        const hiShelf = audioCtx.createBiquadFilter();
+        hiShelf.type = 'highshelf';
+        hiShelf.frequency.value = 4000;
+        hiShelf.gain.value = 2;
+
+        const gain = audioCtx.createGain();
+        gain.gain.value = 0.5;
+
+        src.connect(hiPass);
+        hiPass.connect(hiShelf);
+        hiShelf.connect(gain);
+        gain.connect(audioCtx.destination);
+        src.start(0);
+      }).catch(() => {});
+    }
+
+    ['startup.wav','send.wav','receive.wav','hover.wav','click.wav'].forEach(f => loadSound(f).catch(() => {}));
+
+    // OpenClaw Configuration
+    let CONFIG = {
+      gatewayUrl: localStorage.getItem('gatewayUrl') || 'ws://127.0.0.1:18789',
+      agentId: localStorage.getItem('agentId') || 'main',
+      token: localStorage.getItem('gatewayToken') || '',
+      autoConnect: localStorage.getItem('autoConnect') !== 'false',
+      gatewayScriptPath: localStorage.getItem('gatewayScriptPath') || '',
+      sessionKey: localStorage.getItem('sessionKey') || '',
+    };
+    
+    // Device identity (Ed25519 keypair persisted to disk)
+    const DEVICE_KEY_PATH = path.join(require('os').homedir(), '.clone-chat-device.json');
+    let deviceKeys = null;
+    
+    function loadOrCreateDeviceKeys() {
+      try {
+        if (fs.existsSync(DEVICE_KEY_PATH)) {
+          const data = JSON.parse(fs.readFileSync(DEVICE_KEY_PATH, 'utf8'));
+          const pubKey = crypto.createPublicKey({
+            key: Buffer.from(data.publicKey, 'base64'),
+            format: 'der',
+            type: 'spki'
+          });
+          const privKey = crypto.createPrivateKey({
+            key: Buffer.from(data.privateKey, 'base64'),
+            format: 'der',
+            type: 'pkcs8'
+          });
+          deviceKeys = {
+            publicKey: pubKey,
+            privateKey: privKey,
+            publicKeyRaw: data.publicKeyRaw,
+            deviceId: data.deviceId
+          };
+          console.log('[Device] Loaded existing keypair, deviceId:', deviceKeys.deviceId);
+          return;
+        }
+      } catch (err) {
+        console.log('[Device] Failed to load existing keys, generating new ones:', err.message);
+      }
+      
+      const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519');
+      
+      const pubDer = publicKey.export({ format: 'der', type: 'spki' });
+      const privDer = privateKey.export({ format: 'der', type: 'pkcs8' });
+      
+      // Raw 32-byte public key is the last 32 bytes of the SPKI DER
+      const rawPub = pubDer.slice(-32);
+      const publicKeyRaw = rawPub.toString('base64url');
+      
+      // Device ID = SHA-256 hash of the raw public key
+      const deviceId = crypto.createHash('sha256').update(rawPub).digest('hex');
+      
+      deviceKeys = { publicKey, privateKey, publicKeyRaw, deviceId };
+      
+      try {
+        fs.writeFileSync(DEVICE_KEY_PATH, JSON.stringify({
+          publicKey: pubDer.toString('base64'),
+          privateKey: privDer.toString('base64'),
+          publicKeyRaw,
+          deviceId
+        }));
+        console.log('[Device] Generated and saved new keypair, deviceId:', deviceId);
+      } catch (err) {
+        console.error('[Device] Failed to save keys:', err.message);
+      }
+    }
+    
+    function buildSignPayload(params) {
+      const version = params.nonce ? 'v2' : 'v1';
+      const scopes = (params.scopes || []).join(',');
+      const token = params.token || '';
+      const base = [
+        version,
+        params.deviceId,
+        params.clientId,
+        params.clientMode,
+        params.role,
+        scopes,
+        String(params.signedAtMs),
+        token,
+      ];
+      if (version === 'v2') {
+        base.push(params.nonce || '');
+      }
+      return base.join('|');
+    }
+    
+    function signDeviceAuth(params) {
+      const payload = buildSignPayload(params);
+      console.log('[Device] Signing payload:', payload);
+      const sig = crypto.sign(null, Buffer.from(payload), deviceKeys.privateKey);
+      return sig.toString('base64url');
+    }
+    
+    // Initialize device keys immediately
+    loadOrCreateDeviceKeys();
+    
+    // Connection state
+    let ws = null;
+    let wsConnected = false;
+    let messageId = 1;
+    let pendingRequests = new Map();
+    let challengeNonce = null;
+    
+    // Chat history
+    let chatHistory = [];
+    
+    // Image handling
+    let uploadedImage = null;
+    
+    function handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const container = document.getElementById('imagePreviewContainer');
+        const preview = document.getElementById('imagePreview');
+        preview.src = e.target.result;
+        container.classList.add('visible');
+        uploadedImage = e.target.result;
+        
+        addMessage('assistant', `Image "${file.name}" loaded. Send a message to analyze it.`);
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    function clearImage() {
+      const container = document.getElementById('imagePreviewContainer');
+      const preview = document.getElementById('imagePreview');
+      container.classList.remove('visible');
+      container.style.display = 'none';
+      preview.src = '';
+      uploadedImage = null;
+      document.getElementById('imageInput').value = '';
+    }
+    
+    // Drag and drop support
+    const inputArea = document.getElementById('inputArea');
+    const inputBox = document.getElementById('input');
+    
+    inputArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      inputBox.classList.add('drag-over');
+    });
+    
+    inputArea.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      inputBox.classList.remove('drag-over');
+    });
+    
+    inputArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      inputBox.classList.remove('drag-over');
+      
+      const files = e.dataTransfer.files;
+      if (files.length > 0 && files[0].type.startsWith('image/')) {
+        handleImageFile(files[0]);
+      }
+    });
+    
+    // Paste image support (Ctrl+V)
+    document.addEventListener('paste', (e) => {
+      console.log('Paste event triggered');
+      const items = e.clipboardData?.items;
+      if (!items) {
+        console.log('No clipboard items');
+        return;
+      }
+      
+      for (let item of items) {
+        console.log('Item type:', item.type);
+        if (item.type && item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          console.log('File from paste:', file);
+          if (file) {
+            handleImageFile(file);
+          }
+          return;
+        }
+      }
+      console.log('No image found in clipboard');
+    });
+    
+    function handleImageFile(file) {
+      console.log('handleImageFile called, file:', file);
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        console.log('Image loaded, length:', e.target.result.length);
+        const container = document.getElementById('imagePreviewContainer');
+        const preview = document.getElementById('imagePreview');
+        preview.src = e.target.result;
+        container.style.display = '';
+        container.classList.add('visible');
+        uploadedImage = e.target.result;
+        
+        console.log('uploadedImage set, length:', uploadedImage.length);
+        
+        // Show paste indicator briefly
+        const indicator = document.getElementById('pasteIndicator');
+        indicator.classList.add('visible');
+        setTimeout(() => indicator.classList.remove('visible'), 1500);
+        
+        addMessage('assistant', `Image "${file.name}" loaded. Send a message to analyze it.`);
+      };
+      reader.onerror = function(err) {
+        console.error('FileReader error:', err);
+        addMessage('error', 'Failed to load image: ' + err);
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    function openDashboard() {
+      const url = CONFIG.gatewayUrl.replace('ws://', 'http://').replace('wss://', 'https://');
+      shell.openExternal(url);
+    }
+
+    function openReadme() {
+      const readmePath = path.join(__dirname, 'README.md');
+      if (fs.existsSync(readmePath)) {
+        shell.openPath(readmePath);
+      } else {
+        shell.openExternal('https://github.com/openclaw/openclaw');
+      }
+    }
+    
+    function openGatewayScript() {
+      const scriptPath = CONFIG.gatewayScriptPath;
+      if (!scriptPath) {
+        addMessage('error', 'No gateway script path set. Open CONFIG to set one.');
+        return;
+      }
+      try {
+        shell.openPath(scriptPath);
+        addMessage('assistant', '🚀 Launching OpenClaw Gateway...');
+      } catch (error) {
+        addMessage('error', 'Failed to launch gateway script. Check path in CONFIG.');
+      }
+    }
+    
+    // Load settings into form when page loads
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('settingsUrl').value = CONFIG.gatewayUrl;
+      document.getElementById('settingsAgent').value = CONFIG.agentId;
+      document.getElementById('settingsToken').value = CONFIG.token;
+      document.getElementById('settingsAutoConnect').checked = CONFIG.autoConnect;
+      document.getElementById('settingsGatewayPath').value = CONFIG.gatewayScriptPath;
+      document.getElementById('settingsSessionKey').value = CONFIG.sessionKey;
+
+      playSound('startup.wav');
+
+      document.addEventListener('mouseover', (e) => {
+        const btn = e.target.closest('button, .small-button, .title-btn, .settings-btn, .sb-btn');
+        if (btn) playUISound('hover.wav');
+      });
+      document.addEventListener('mousedown', (e) => {
+        const btn = e.target.closest('button, .small-button, .title-btn, .settings-btn, .sb-btn');
+        if (btn) playUISound('click.wav');
+      });
+    });
+    
+    let isProcessing = false;
+    
+    // === OpenClaw Gateway Connection ===
+    
+    function connectGateway() {
+      const connectionStatus = document.getElementById('connectionStatus');
+      
+      // Reset state
+      wsConnected = false;
+      challengeNonce = null;
+      pendingRequests.clear();
+      
+      connectionStatus.textContent = 'CONNECTING...';
+      connectionStatus.classList.remove('connected');
+      connectionStatus.classList.add('disconnected');
+      
+      addMessage('assistant', 'Connecting to OpenClaw Gateway...');
+      
+      try {
+        ws = new WebSocket(CONFIG.gatewayUrl);
+        
+        ws.onopen = () => {
+          console.log('[Gateway] WebSocket opened');
+        };
+        
+        ws.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            console.log('[Gateway] ←', msg);
+            handleGatewayMessage(msg);
+          } catch (err) {
+            console.error('[Gateway] Failed to parse message:', err);
+          }
+        };
+        
+        ws.onclose = (event) => {
+          console.log('[Gateway] WebSocket closed:', event.code, event.reason);
+          wsConnected = false;
+          connectionStatus.textContent = 'DISCONNECTED';
+          connectionStatus.classList.remove('connected');
+          connectionStatus.classList.add('disconnected');
+          showSetupHint();
+        };
+        
+        ws.onerror = (err) => {
+          console.error('[Gateway] WebSocket error:', err);
+        };
+        
+      } catch (error) {
+        console.error('[Gateway] Failed to create WebSocket:', error);
+        connectionStatus.textContent = 'FAILED';
+        connectionStatus.classList.add('disconnected');
+        addMessage('error', `Connection failed: ${error.message}`);
+        showSetupHint();
+      }
+    }
+
+    function showSetupHint() {
+      const btn = document.querySelector('.settings-btn');
+      if (!wsConnected) {
+        btn.classList.add('needs-setup');
+      }
+    }
+
+    function hideSetupHint() {
+      const btn = document.querySelector('.settings-btn');
+      btn.classList.remove('needs-setup');
+    }
+    
+    function handleGatewayMessage(msg) {
+      const connectionStatus = document.getElementById('connectionStatus');
+      
+      // Handle challenge (first message from server)
+      if (msg.type === 'event' && msg.event === 'connect.challenge') {
+        console.log('[Gateway] Received challenge');
+        challengeNonce = msg.payload.nonce;
+        sendConnectRequest();
+        return;
+      }
+      
+      // Handle RPC responses
+      if (msg.type === 'res' && msg.id !== undefined) {
+        if (pendingRequests.has(msg.id)) {
+          const handler = pendingRequests.get(msg.id);
+          handler(msg);
+          pendingRequests.delete(msg.id);
+        }
+        
+        // Check if this is the connect response (hello-ok)
+        if (msg.ok && !wsConnected && msg.payload && msg.payload.type === 'hello-ok') {
+          wsConnected = true;
+          connectionStatus.textContent = 'CONNECTED';
+          connectionStatus.classList.remove('disconnected');
+          connectionStatus.classList.add('connected');
+          hideSetupHint();
+          
+          console.log('[Gateway] Connected! Protocol version:', msg.payload.protocol);
+          addMessage('assistant', '✅ Connected to OpenClaw Gateway!\n\nReady to chat with your agents.');
+        }
+        return;
+      }
+      
+      // Handle events
+      if (msg.type === 'event') {
+        handleGatewayEvent(msg);
+      }
+    }
+    
+    function handleGatewayEvent(msg) {
+      console.log('[Gateway] Event:', msg.event, msg.payload?.state);
+      
+      if (msg.event === 'chat' && msg.payload) {
+        const { state, message, errorMessage } = msg.payload;
+        
+        if (state === 'delta') {
+          const text = extractText(message);
+          if (text) {
+            appendStreamingMessage(text);
+          }
+        } else if (state === 'final') {
+          const hadStreaming = finalizeStreamingMessage();
+          playSound('receive.wav');
+          
+          // Only show the final message if no streaming already displayed it
+          if (!hadStreaming && message) {
+            let text = extractText(message);
+            if (text) {
+              addMessage('assistant', text);
+            }
+          }
+          
+          // Re-enable input
+          isProcessing = false;
+          document.getElementById('input').disabled = false;
+          document.getElementById('sendBtn').disabled = false;
+          document.getElementById('input').focus();
+          
+          const status = document.getElementById('status');
+          status.textContent = 'IDLE';
+          status.classList.remove('active', 'working');
+        } else if (state === 'error') {
+          finalizeStreamingMessage();
+          addMessage('error', errorMessage || 'Agent error');
+          
+          isProcessing = false;
+          document.getElementById('input').disabled = false;
+          document.getElementById('sendBtn').disabled = false;
+          document.getElementById('input').focus();
+          
+          const status = document.getElementById('status');
+          status.textContent = 'IDLE';
+          status.classList.remove('active', 'working');
+        } else if (state === 'aborted') {
+          finalizeStreamingMessage();
+          addMessage('assistant', '(response aborted)');
+          
+          isProcessing = false;
+          document.getElementById('input').disabled = false;
+          document.getElementById('sendBtn').disabled = false;
+          document.getElementById('input').focus();
+          
+          const status = document.getElementById('status');
+          status.textContent = 'IDLE';
+          status.classList.remove('active', 'working');
+        }
+      }
+    }
+    
+    function sendConnectRequest() {
+      const now = Date.now();
+      const role = 'operator';
+      const scopes = ['operator.read', 'operator.write'];
+      const clientId = 'cli';
+      const clientMode = 'cli';
+      
+      const sigPayload = {
+        deviceId: deviceKeys.deviceId,
+        clientId: clientId,
+        clientMode: clientMode,
+        role: role,
+        scopes: scopes,
+        signedAtMs: now,
+        token: CONFIG.token || null,
+        nonce: challengeNonce || null
+      };
+      
+      const signature = signDeviceAuth(sigPayload);
+      
+      const connectParams = {
+        minProtocol: 3,
+        maxProtocol: 3,
+        client: {
+          id: clientId,
+          displayName: 'Clone Chat',
+          version: '1.0.0',
+          platform: 'node',
+          mode: clientMode
+        },
+        role: role,
+        scopes: scopes,
+        device: {
+          id: deviceKeys.deviceId,
+          publicKey: deviceKeys.publicKeyRaw,
+          signature: signature,
+          signedAt: now,
+          nonce: challengeNonce || undefined
+        }
+      };
+      
+      // Add auth token if provided
+      if (CONFIG.token) {
+        connectParams.auth = { token: CONFIG.token };
+      }
+      
+      const connectId = sendGatewayRequest('connect', connectParams);
+      
+      pendingRequests.set(connectId, (response) => {
+        if (response.error) {
+          console.error('[Gateway] Connect failed:', response.error);
+          addMessage('error', `Connection failed: ${response.error.message || JSON.stringify(response.error)}`);
+          wsConnected = false;
+          const cs = document.getElementById('connectionStatus');
+          cs.textContent = 'AUTH FAILED';
+          cs.classList.remove('connected');
+          cs.classList.add('disconnected');
+          showSetupHint();
+          if (ws) {
+            try { ws.onclose = null; } catch(_) {}
+            ws.close();
+          }
+        }
+      });
+    }
+    
+    function sendGatewayRequest(method, params) {
+      const id = String(messageId++);
+      const message = {
+        type: 'req',
+        id,
+        method,
+        params
+      };
+      
+      console.log('[Gateway] →', message);
+      ws.send(JSON.stringify(message));
+      return id;
+    }
+    
+    let streamingMessageElement = null;
+    let streamingContent = '';
+    
+    function appendStreamingMessage(content) {
+      if (!streamingMessageElement) {
+        streamingMessageElement = document.createElement('div');
+        streamingMessageElement.className = 'message';
+        streamingMessageElement.innerHTML = `<span class="message-assistant">🧩 Clone:</span> `;
+        document.getElementById('chat').insertBefore(streamingMessageElement, document.getElementById('chat').firstChild);
+        streamingContent = '';
+      }
+      
+      // Replace content (deltas are cumulative, not incremental)
+      streamingContent = content;
+      streamingMessageElement.innerHTML = `<span class="message-assistant">🧩 Clone:</span> ${escapeHtml(streamingContent)}`;
+      
+      const chat = document.getElementById('chat');
+      if (chat.scrollTop < 50) {
+        chat.scrollTop = 0;
+      }
+    }
+    
+    function finalizeStreamingMessage() {
+      const hadStreaming = !!streamingMessageElement;
+      if (streamingMessageElement) {
+        chatHistory.push({ role: 'assistant', content: streamingContent });
+        streamingMessageElement = null;
+        streamingContent = '';
+      }
+      return hadStreaming;
+    }
+    
+    function addMessage(type, content, imageDataUrl) {
+      const chat = document.getElementById('chat');
+      const msg = document.createElement('div');
+      msg.className = 'message';
+      
+      const escaped = escapeHtml(content);
+      let imgHtml = '';
+      if (imageDataUrl) {
+        imgHtml = `<div style="margin-top:4px;"><img src="${imageDataUrl}" style="max-width:200px; max-height:150px; border:2px solid #808080; display:block;" /></div>`;
+      }
+
+      if (type === 'user') {
+        msg.innerHTML = `<span class="message-user">You:</span> ${escaped}${imgHtml}`;
+      } else if (type === 'assistant') {
+        msg.innerHTML = `<span class="message-assistant">🧩 Clone:</span> ${escaped}${imgHtml}`;
+      } else if (type === 'error') {
+        msg.innerHTML = `<span class="message-error">⚠️ Error:</span> ${escaped}${imgHtml}`;
+      }
+      
+      chat.insertBefore(msg, chat.firstChild);
+      
+      setTimeout(() => {
+        if (chat.scrollTop < 50) {
+          chat.scrollTop = 0;
+        }
+        checkScrollPosition();
+      }, 50);
+    }
+    
+    function toggleSettings() {
+      const panel = document.getElementById('settingsPanel');
+      panel.classList.toggle('visible');
+    }
+    
+    function saveSettings() {
+      const newUrl = document.getElementById('settingsUrl').value.trim();
+      const newAgent = document.getElementById('settingsAgent').value.trim();
+      const newToken = document.getElementById('settingsToken').value.trim();
+      const newAutoConnect = document.getElementById('settingsAutoConnect').checked;
+      const newGatewayPath = document.getElementById('settingsGatewayPath').value.trim();
+      const newSessionKey = document.getElementById('settingsSessionKey').value.trim();
+      
+      localStorage.setItem('gatewayUrl', newUrl);
+      localStorage.setItem('agentId', newAgent);
+      localStorage.setItem('gatewayToken', newToken);
+      localStorage.setItem('autoConnect', newAutoConnect ? 'true' : 'false');
+      localStorage.setItem('gatewayScriptPath', newGatewayPath);
+      localStorage.setItem('sessionKey', newSessionKey);
+      
+      CONFIG.gatewayUrl = newUrl;
+      CONFIG.agentId = newAgent;
+      CONFIG.token = newToken;
+      CONFIG.autoConnect = newAutoConnect;
+      CONFIG.gatewayScriptPath = newGatewayPath;
+      CONFIG.sessionKey = newSessionKey;
+      
+      toggleSettings();
+      
+      addMessage('assistant', '⚙️ Settings saved! Reconnecting...');
+      
+      // Reconnect with new settings
+      if (ws) {
+        ws.close();
+      }
+      setTimeout(() => connectGateway(), 500);
+    }
+    
+    function sendMessage() {
+      if (isProcessing) {
+        return;
+      }
+      
+      if (!wsConnected) {
+        addMessage('error', 'Not connected to gateway. Please wait...');
+        return;
+      }
+      
+      const input = document.getElementById('input');
+      const sendBtn = document.getElementById('sendBtn');
+      const status = document.getElementById('status');
+      
+      const text = input.value.trim();
+      if (!text && !uploadedImage) {
+        return;
+      }
+      
+      createRipple(sendBtn, event);
+      createSparkles(sendBtn);
+      playSound('send.wav');
+      
+      // Capture image before it gets cleared
+      const sentImage = uploadedImage || null;
+
+      // Add user message with inline image
+      addMessage('user', text || '', sentImage);
+      chatHistory.push({ role: 'user', content: text || '(image)' });
+      
+      // Clear input
+      input.value = '';
+      sendBtn.classList.remove('has-text');
+      
+      // Show typing indicator
+      isProcessing = true;
+      input.disabled = true;
+      sendBtn.disabled = true;
+      
+      status.innerHTML = '<div class="typing-indicator"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>';
+      status.classList.add('active', 'working');
+      
+      try {
+        // Prepare attachments
+        const attachments = [];
+        if (uploadedImage) {
+          const base64Match = uploadedImage.match(/^data:image\/([^;]+);base64,(.+)$/);
+          if (base64Match) {
+            attachments.push({
+              type: 'file',
+              mimeType: `image/${base64Match[1]}`,
+              fileName: 'image.png',
+              content: base64Match[2]
+            });
+          }
+        }
+        
+        // Send chat message
+        const msgId = sendGatewayRequest('chat.send', {
+          sessionKey: CONFIG.sessionKey || `agent:${CONFIG.agentId}:${CONFIG.agentId}`,
+          message: text || 'What is in this image?',
+          attachments: attachments,
+          deliver: false,
+          idempotencyKey: `widget-${Date.now()}`
+        });
+        
+        pendingRequests.set(msgId, (response) => {
+          console.log('[Gateway] chat.send response:', response);
+          
+          if (response.error) {
+            addMessage('error', `Failed: ${response.error.message || JSON.stringify(response.error)}`);
+            
+            // Re-enable input on error
+            isProcessing = false;
+            input.disabled = false;
+            sendBtn.disabled = false;
+            input.focus();
+            
+            status.textContent = 'IDLE';
+            status.classList.remove('active', 'working');
+          }
+          // Success case is handled by chat.final event
+        });
+        
+        // Clear image after sending
+        if (uploadedImage) {
+          clearImage();
+        }
+        
+      } catch (error) {
+        console.error('[Gateway] Send error:', error);
+        addMessage('error', `Failed to send: ${error.message}`);
+        
+        isProcessing = false;
+        input.disabled = false;
+        sendBtn.disabled = false;
+        input.focus();
+        
+        status.textContent = 'IDLE';
+        status.classList.remove('active', 'working');
+      }
+    }
+    
+    function extractText(message) {
+      if (!message) return '';
+      if (typeof message === 'string') return message;
+      if (typeof message.content === 'string') return message.content;
+      if (Array.isArray(message.content)) {
+        return message.content
+          .filter(b => b.type === 'text' && b.text)
+          .map(b => b.text)
+          .join('');
+      }
+      if (message.text) return message.text;
+      return '';
+    }
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function minimizeWindow() {
+      remote.getCurrentWindow().minimize();
+      createSparkles(event.target);
+    }
+    
+    function maximizeWindow() {
+      const win = remote.getCurrentWindow();
+      if (win.isMaximized()) {
+        win.unmaximize();
+      } else {
+        win.maximize();
+      }
+      createSparkles(event.target);
+    }
+    
+    function closeWindow() {
+      createSparkles(event.target);
+      setTimeout(() => {
+        remote.getCurrentWindow().close();
+      }, 300);
+    }
+    
+    function updateSendButton() {
+      const input = document.getElementById('input');
+      const sendBtn = document.getElementById('sendBtn');
+      
+      if (input.value.trim()) {
+        sendBtn.classList.add('has-text');
+      } else {
+        sendBtn.classList.remove('has-text');
+      }
+    }
+    
+    function createRipple(button, event) {
+      const ripple = document.createElement('span');
+      ripple.classList.add('ripple');
+      
+      const rect = button.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      
+      ripple.style.left = x + 'px';
+      ripple.style.top = y + 'px';
+      
+      button.appendChild(ripple);
+      
+      setTimeout(() => ripple.remove(), 600);
+    }
+    
+    function createSparkles(element) {
+      const sparkles = ['✨', '⭐', '💫', '🌟'];
+      const rect = element.getBoundingClientRect();
+      
+      for (let i = 0; i < 3; i++) {
+        setTimeout(() => {
+          const sparkle = document.createElement('div');
+          sparkle.classList.add('sparkle');
+          sparkle.textContent = sparkles[Math.floor(Math.random() * sparkles.length)];
+          sparkle.style.left = (rect.left + Math.random() * rect.width) + 'px';
+          sparkle.style.top = (rect.top + Math.random() * rect.height) + 'px';
+          document.body.appendChild(sparkle);
+          
+          setTimeout(() => sparkle.remove(), 800);
+        }, i * 100);
+      }
+    }
+    
+    // === Custom Scrollbar ===
+    const chat = document.getElementById('chat');
+    const sbTop = document.getElementById('sbTop');
+    const sbUp = document.getElementById('sbUp');
+    const sbDown = document.getElementById('sbDown');
+    const sbTrack = document.getElementById('sbTrack');
+    const sbThumb = document.getElementById('sbThumb');
+    
+    const SCROLL_STEP = 60;
+    let scrollInterval = null;
+    
+    function scrollToTop() {
+      chat.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    function scrollToBottom() {
+      chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
+    }
+    
+    // Jump to top (oldest messages)
+    sbTop.addEventListener('mousedown', () => {
+      if (!sbTop.classList.contains('disabled')) {
+        scrollToTop();
+      }
+    });
+    
+    // Scroll up (toward newer messages, scrollTop decreases)
+    sbUp.addEventListener('mousedown', () => {
+      chat.scrollTop -= SCROLL_STEP;
+      scrollInterval = setInterval(() => { chat.scrollTop -= SCROLL_STEP; }, 100);
+    });
+    sbUp.addEventListener('mouseup', () => clearInterval(scrollInterval));
+    sbUp.addEventListener('mouseleave', () => clearInterval(scrollInterval));
+    
+    // Scroll down (toward older messages, scrollTop increases)
+    sbDown.addEventListener('mousedown', () => {
+      chat.scrollTop += SCROLL_STEP;
+      scrollInterval = setInterval(() => { chat.scrollTop += SCROLL_STEP; }, 100);
+    });
+    sbDown.addEventListener('mouseup', () => clearInterval(scrollInterval));
+    sbDown.addEventListener('mouseleave', () => clearInterval(scrollInterval));
+    
+    // Track click - jump to position
+    sbTrack.addEventListener('mousedown', (e) => {
+      if (e.target === sbTrack) {
+        const rect = sbTrack.getBoundingClientRect();
+        const ratio = (e.clientY - rect.top) / rect.height;
+        chat.scrollTop = ratio * (chat.scrollHeight - chat.clientHeight);
+      }
+    });
+    
+    // Thumb drag
+    let isDragging = false;
+    let dragStartY = 0;
+    let dragStartScroll = 0;
+    
+    sbThumb.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      dragStartY = e.clientY;
+      dragStartScroll = chat.scrollTop;
+      e.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const trackHeight = sbTrack.clientHeight;
+      const thumbHeight = sbThumb.clientHeight;
+      const scrollableTrack = trackHeight - thumbHeight;
+      if (scrollableTrack <= 0) return;
+      
+      const dy = e.clientY - dragStartY;
+      const scrollRange = chat.scrollHeight - chat.clientHeight;
+      const scrollDelta = (dy / scrollableTrack) * scrollRange;
+      chat.scrollTop = dragStartScroll + scrollDelta;
+    });
+    
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+    
+    // Update thumb position and button states
+    function updateScrollbar() {
+      const scrollHeight = chat.scrollHeight;
+      const clientHeight = chat.clientHeight;
+      const scrollTop = chat.scrollTop;
+      const hasOverflow = scrollHeight > clientHeight + 2;
+      
+      if (!hasOverflow) {
+        sbThumb.style.display = 'none';
+        sbTop.classList.add('disabled');
+        return;
+      }
+      
+      sbThumb.style.display = 'block';
+      
+      const trackHeight = sbTrack.clientHeight;
+      const ratio = clientHeight / scrollHeight;
+      const thumbHeight = Math.max(16, Math.floor(trackHeight * ratio));
+      const scrollRange = scrollHeight - clientHeight;
+      const scrollRatio = scrollRange > 0 ? scrollTop / scrollRange : 0;
+      const thumbTop = Math.floor((trackHeight - thumbHeight) * scrollRatio);
+      
+      sbThumb.style.height = thumbHeight + 'px';
+      sbThumb.style.top = thumbTop + 'px';
+      
+      // "Jump to top" disabled when already at top
+      const isAtTop = scrollTop < 5;
+      if (isAtTop) {
+        sbTop.classList.add('disabled');
+      } else {
+        sbTop.classList.remove('disabled');
+      }
+    }
+    
+    chat.addEventListener('scroll', updateScrollbar);
+    
+    function checkScrollPosition() {
+      updateScrollbar();
+    }
+    
+    const observer = new MutationObserver(() => {
+      const wasAtTop = chat.scrollBefore < 50;
+      if (wasAtTop) {
+        chat.scrollTop = 0;
+      }
+      updateScrollbar();
+    });
+    
+    observer.observe(chat, { childList: true, subtree: true });
+    
+    chat.scrollBefore = chat.scrollTop;
+    chat.addEventListener('scroll', () => {
+      chat.scrollBefore = chat.scrollTop;
+    });
+    
+    document.getElementById('input').focus();
+    chat.scrollTop = 0;
+    updateScrollbar();
+    
+    // === Customization System ===
+    const CUST_DEFAULTS = {
+      titleText: 'XD Clone Chat',
+      titleGrad1: '#9acd32',
+      titleGrad2: '#39ff14',
+      titleTextColor: '#ffffff',
+      windowBg: '#c0c0c0',
+      statusBg: '#c0c0c0',
+      chatBg: '#ffffff',
+      userText: '#6b8e23',
+      botText: '#228b22',
+      systemText: '#cc0000',
+      timestamp: '#666666',
+      inputBg: '#ffffff',
+      inputText: '#000000',
+      inputBorder: '#808080',
+      buttonBg: '#c0c0c0',
+      buttonText: '#000000',
+      sendBg: '#c0c0c0',
+      sendText: '#000000',
+      scrollTrack: '#c0c0c0',
+      scrollThumb: '#c0c0c0',
+      scrollBtnBg: '#c0c0c0'
+    };
+
+    const CUST_KEYS = Object.keys(CUST_DEFAULTS);
+
+    function loadCustomization() {
+      const saved = localStorage.getItem('chatCustomization');
+      return saved ? JSON.parse(saved) : { ...CUST_DEFAULTS };
+    }
+
+    function saveCustomization(theme) {
+      localStorage.setItem('chatCustomization', JSON.stringify(theme));
+    }
+
+    function applyTheme(theme) {
+      const titleBar = document.querySelector('.title-bar');
+      const titleText = document.querySelector('.title-text');
+      const titleNameSpan = titleText.querySelectorAll('span')[1];
+      const win = document.querySelector('.window');
+      const chatEl = document.getElementById('chat');
+      const statusBar = document.querySelector('.status-bar');
+      const inputBox = document.getElementById('input');
+      const sendBtn = document.getElementById('sendBtn');
+
+      if (titleNameSpan) titleNameSpan.textContent = theme.titleText || CUST_DEFAULTS.titleText;
+
+      titleBar.style.background = `linear-gradient(90deg, ${theme.titleGrad1}, ${theme.titleGrad2})`;
+      titleText.style.color = theme.titleTextColor;
+      titleText.style.textShadow = `2px 2px 4px rgba(0,0,0,0.6)`;
+
+      win.style.background = theme.windowBg;
+      statusBar.style.background = theme.statusBg;
+
+      chatEl.style.background = theme.chatBg;
+
+      inputBox.style.background = theme.inputBg;
+      inputBox.style.color = theme.inputText;
+      inputBox.style.borderColor = `${theme.inputBorder} ${theme.inputBorder} ${theme.inputBorder} ${theme.inputBorder}`;
+
+      sendBtn.style.background = theme.sendBg;
+      sendBtn.style.color = theme.sendText;
+
+      document.querySelectorAll('.small-button').forEach(btn => {
+        btn.style.background = theme.buttonBg;
+        btn.style.color = theme.buttonText;
+      });
+      document.querySelector('.settings-btn').style.background = theme.buttonBg;
+      document.querySelector('.settings-btn').style.color = theme.buttonText;
+
+      document.querySelectorAll('.sb-btn').forEach(btn => {
+        btn.style.background = theme.scrollBtnBg;
+      });
+      document.querySelector('.sb-track').style.background = theme.scrollTrack;
+      document.getElementById('sbThumb').style.background = theme.scrollThumb;
+
+      const style = document.getElementById('dynamicThemeStyle') || document.createElement('style');
+      style.id = 'dynamicThemeStyle';
+      style.textContent = `
+        .message-user { color: ${theme.userText} !important; }
+        .message-assistant { color: ${theme.botText} !important; }
+        .message-error { color: ${theme.systemText} !important; }
+        .message { color: ${theme.botText}; }
+        .message .message-user ~ * { color: ${theme.userText}; }
+        .chat-display { background: ${theme.chatBg} !important; }
+        .chat-display::after {
+          background-image: linear-gradient(${theme.userText}11 1px, transparent 1px) !important;
+          background-size: 100% 20px !important;
+        }
+        .window::before, .window::after { border-color: ${theme.titleGrad2} !important; }
+        .title-text::after {
+          background: ${theme.titleGrad2} !important;
+          box-shadow: 0 0 10px ${theme.titleGrad2} !important;
+        }
+        .input-area::before { color: ${theme.inputText} !important; }
+        .send-button:hover:not(:disabled) {
+          background: linear-gradient(135deg, ${theme.sendBg}, ${theme.titleGrad2}) !important;
+        }
+        .send-button.has-text:not(:disabled) {
+          box-shadow: 0 0 10px ${theme.titleGrad2}80 !important;
+        }
+        .status-section.connected::before { color: ${theme.titleGrad2} !important; }
+        .settings-title, .customize-title {
+          background: linear-gradient(90deg, ${theme.titleGrad1}, ${theme.titleGrad2}) !important;
+          color: ${theme.titleTextColor} !important;
+        }
+        .typing-dot { background: ${theme.botText} !important; }
+        .paste-indicator { background: ${theme.titleGrad2}e6 !important; }
+      `;
+      if (!document.getElementById('dynamicThemeStyle')) document.head.appendChild(style);
+    }
+
+    function populateCustomizePanel(theme) {
+      CUST_KEYS.forEach(key => {
+        const colorEl = document.getElementById('cust' + key.charAt(0).toUpperCase() + key.slice(1));
+        const hexEl = document.getElementById('cust' + key.charAt(0).toUpperCase() + key.slice(1) + 'Hex');
+        if (colorEl && hexEl) {
+          if (colorEl.type === 'color') {
+            colorEl.value = theme[key];
+            hexEl.value = theme[key];
+          }
+        }
+      });
+      const titleTextInput = document.getElementById('custTitleText');
+      if (titleTextInput) titleTextInput.value = theme.titleText || CUST_DEFAULTS.titleText;
+    }
+
+    function readCustomizePanel() {
+      const theme = {};
+      CUST_KEYS.forEach(key => {
+        if (key === 'titleText') return;
+        const hexEl = document.getElementById('cust' + key.charAt(0).toUpperCase() + key.slice(1) + 'Hex');
+        if (hexEl) theme[key] = hexEl.value;
+      });
+      const titleTextInput = document.getElementById('custTitleText');
+      theme.titleText = titleTextInput ? titleTextInput.value : CUST_DEFAULTS.titleText;
+      return theme;
+    }
+
+    function toggleCustomize() {
+      const panel = document.getElementById('customizePanel');
+      const isVisible = panel.classList.contains('visible');
+      if (!isVisible) {
+        populateCustomizePanel(loadCustomization());
+      }
+      panel.classList.toggle('visible');
+    }
+
+    function applyAndSaveCustomization() {
+      const theme = readCustomizePanel();
+      saveCustomization(theme);
+      applyTheme(theme);
+      toggleCustomize();
+    }
+
+    function resetCustomization() {
+      const defaults = { ...CUST_DEFAULTS };
+      saveCustomization(defaults);
+      populateCustomizePanel(defaults);
+      applyTheme(defaults);
+    }
+
+    // Sync color pickers <-> hex inputs, with live preview
+    CUST_KEYS.forEach(key => {
+      if (key === 'titleText') return;
+      const capKey = 'cust' + key.charAt(0).toUpperCase() + key.slice(1);
+      const colorEl = document.getElementById(capKey);
+      const hexEl = document.getElementById(capKey + 'Hex');
+      if (colorEl && hexEl) {
+        colorEl.addEventListener('input', () => {
+          hexEl.value = colorEl.value;
+          applyTheme(readCustomizePanel());
+        });
+        hexEl.addEventListener('input', () => {
+          const v = hexEl.value.trim();
+          if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+            colorEl.value = v;
+            applyTheme(readCustomizePanel());
+          }
+        });
+      }
+    });
+
+    const custTitleTextInput = document.getElementById('custTitleText');
+    if (custTitleTextInput) {
+      custTitleTextInput.addEventListener('input', () => {
+        applyTheme(readCustomizePanel());
+      });
+    }
+
+    // Apply saved theme on load
+    const savedTheme = loadCustomization();
+    applyTheme(savedTheme);
+
+    // Auto-detect local OpenClaw before connecting
+    function probeLocalGateway(url, timeoutMs) {
+      return new Promise((resolve) => {
+        let settled = false;
+        const done = (result) => { if (!settled) { settled = true; resolve(result); } };
+
+        try {
+          const probe = new WebSocket(url);
+          const timer = setTimeout(() => {
+            try { probe.close(); } catch (_) {}
+            done(false);
+          }, timeoutMs);
+
+          probe.onmessage = (event) => {
+            try {
+              const msg = JSON.parse(event.data);
+              if (msg.type === 'event' && msg.event === 'connect.challenge') {
+                clearTimeout(timer);
+                probe.close();
+                done(true);
+              }
+            } catch (_) {}
+          };
+          probe.onerror = () => { clearTimeout(timer); done(false); };
+          probe.onclose = () => { clearTimeout(timer); done(false); };
+        } catch (_) {
+          done(false);
+        }
+      });
+    }
+
+    function goIdle(message) {
+      const cs = document.getElementById('connectionStatus');
+      cs.textContent = 'NOT CONNECTED';
+      cs.classList.remove('connected');
+      cs.classList.add('disconnected');
+      addMessage('assistant', message);
+      showSetupHint();
+    }
+
+    async function startupConnect() {
+      if (!CONFIG.token) {
+        goIdle('Welcome! Click the CONFIG button to enter your Gateway Token and connect to your OpenClaw agent.');
+        return;
+      }
+
+      if (CONFIG.autoConnect) {
+        const defaultUrl = 'ws://127.0.0.1:18789';
+        addMessage('assistant', 'Scanning for local OpenClaw gateway...');
+
+        const found = await probeLocalGateway(defaultUrl, 2000);
+        if (found) {
+          CONFIG.gatewayUrl = defaultUrl;
+          document.getElementById('settingsUrl').value = defaultUrl;
+          addMessage('assistant', 'Local OpenClaw detected! Connecting...');
+          connectGateway();
+          return;
+        }
+
+        if (CONFIG.gatewayUrl && CONFIG.gatewayUrl !== defaultUrl) {
+          addMessage('assistant', 'No local gateway found. Trying configured URL...');
+          connectGateway();
+        } else {
+          goIdle('No local OpenClaw detected. Click CONFIG to set your gateway URL and token.');
+        }
+      } else {
+        connectGateway();
+      }
+    }
+
+    setTimeout(() => { startupConnect(); }, 500);
+  </script>
+</body>
+</html>

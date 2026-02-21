@@ -1,0 +1,9 @@
+node_modules/
+dist/
+out/
+package-lock.json
+.clone-chat-device.json
+*.log
+.DS_Store
+Thumbs.db
+gen-icon.js
