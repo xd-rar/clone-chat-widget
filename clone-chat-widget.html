@@ -1303,11 +1303,13 @@
         const p = path.join(__dirname, filename);
         fs.readFile(p, (err, data) => {
           if (err) return reject(err);
-          const ab = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
-          audioCtx.decodeAudioData(ab, (decoded) => {
+          const fresh = new ArrayBuffer(data.length);
+          const view = new Uint8Array(fresh);
+          for (let i = 0; i < data.length; i++) view[i] = data[i];
+          audioCtx.decodeAudioData(fresh).then(decoded => {
             soundCache[filename] = decoded;
             resolve(decoded);
-          }, reject);
+          }).catch(reject);
         });
       });
     }
