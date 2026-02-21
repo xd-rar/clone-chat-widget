@@ -1276,6 +1276,12 @@
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const soundCache = {};
 
+    function resumeAudio() {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+    document.addEventListener('click', resumeAudio, { once: true });
+    document.addEventListener('keydown', resumeAudio, { once: true });
+
     function generateReverb(duration, decay) {
       const rate = audioCtx.sampleRate;
       const len = rate * duration;
@@ -1655,12 +1661,20 @@
 
       playSound('startup.wav');
 
+      const btnSelector = 'button, .small-button, .title-btn, .settings-btn, .sb-btn, #sendBtn, [onclick]';
+      let lastHovered = null;
       document.addEventListener('mouseover', (e) => {
-        const btn = e.target.closest('button, .small-button, .title-btn, .settings-btn, .sb-btn');
-        if (btn) playUISound('hover.wav');
+        resumeAudio();
+        const btn = e.target.closest(btnSelector);
+        if (btn && btn !== lastHovered) {
+          lastHovered = btn;
+          playUISound('hover.wav');
+        }
+        if (!btn) lastHovered = null;
       });
       document.addEventListener('mousedown', (e) => {
-        const btn = e.target.closest('button, .small-button, .title-btn, .settings-btn, .sb-btn');
+        resumeAudio();
+        const btn = e.target.closest(btnSelector);
         if (btn) playUISound('click.wav');
       });
     });
