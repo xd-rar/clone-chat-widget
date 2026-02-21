@@ -132,6 +132,34 @@
       display: inline-block;
       font-size: 16px;
     }
+
+    .app-logo {
+      width: 18px;
+      height: 18px;
+      vertical-align: middle;
+      object-fit: contain;
+      display: inline-block;
+    }
+
+    .app-logo-title {
+      width: 20px;
+      height: 20px;
+      vertical-align: middle;
+      object-fit: contain;
+      animation: emoji-bounce 2s ease-in-out infinite;
+      display: inline-block;
+      filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.5));
+      position: relative;
+      top: 2px;
+    }
+
+    .app-logo-chat {
+      width: 16px;
+      height: 16px;
+      vertical-align: middle;
+      object-fit: contain;
+      margin-right: 2px;
+    }
     
     /* Status LED next to title */
     .title-text::after {
@@ -1018,7 +1046,7 @@
   <div class="window">
     <div class="title-bar">
       <div class="title-text">
-        <span>🧩</span>
+        <img class="app-logo-title" id="titleLogo" src="" alt="">
         <span>XD Clone Chat</span>
       </div>
       <div class="title-buttons">
@@ -1272,6 +1300,18 @@
     const crypto = require('crypto');
     const fs = require('fs');
     const path = require('path');
+
+    function getImagePath(filename) {
+      const devPath = path.join(__dirname, filename);
+      if (fs.existsSync(devPath)) return 'file://' + devPath.replace(/\\/g, '/');
+      const resPath = path.join(process.resourcesPath, filename);
+      if (fs.existsSync(resPath)) return 'file://' + resPath.replace(/\\/g, '/');
+      return 'file://' + devPath.replace(/\\/g, '/');
+    }
+    const greenLogoSrc = getImagePath('icon.png');
+    const goldLogoSrc = getImagePath('gold-crown.png');
+    const greenLogoTag = `<img class="app-logo-chat" src="${greenLogoSrc}" alt="">`;
+    const goldLogoTag = `<img class="app-logo-chat" src="${goldLogoSrc}" alt="">`;
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const soundCache = {};
@@ -1667,6 +1707,8 @@
       document.getElementById('settingsGatewayPath').value = CONFIG.gatewayScriptPath;
       document.getElementById('settingsSessionKey').value = CONFIG.sessionKey;
 
+      document.getElementById('titleLogo').src = greenLogoSrc;
+
       playSound('startup.wav');
 
       const btnSelector = 'button, .small-button, .title-btn, .settings-btn, .sb-btn, #sendBtn, [onclick]';
@@ -1942,14 +1984,14 @@
       if (!streamingMessageElement) {
         streamingMessageElement = document.createElement('div');
         streamingMessageElement.className = 'message';
-        streamingMessageElement.innerHTML = `<span class="message-assistant">🧩 Clone:</span> `;
+        streamingMessageElement.innerHTML = `<span class="message-assistant">${greenLogoTag} Clone:</span> `;
         document.getElementById('chat').insertBefore(streamingMessageElement, document.getElementById('chat').firstChild);
         streamingContent = '';
       }
       
       // Replace content (deltas are cumulative, not incremental)
       streamingContent = content;
-      streamingMessageElement.innerHTML = `<span class="message-assistant">🧩 Clone:</span> ${escapeHtml(streamingContent)}`;
+      streamingMessageElement.innerHTML = `<span class="message-assistant">${greenLogoTag} Clone:</span> ${escapeHtml(streamingContent)}`;
       
       const chat = document.getElementById('chat');
       if (chat.scrollTop < 50) {
@@ -1979,9 +2021,9 @@
       }
 
       if (type === 'user') {
-        msg.innerHTML = `<span class="message-user">You:</span> ${escaped}${imgHtml}`;
+        msg.innerHTML = `<span class="message-user">${goldLogoTag} You:</span> ${escaped}${imgHtml}`;
       } else if (type === 'assistant') {
-        msg.innerHTML = `<span class="message-assistant">🧩 Clone:</span> ${escaped}${imgHtml}`;
+        msg.innerHTML = `<span class="message-assistant">${greenLogoTag} Clone:</span> ${escaped}${imgHtml}`;
       } else if (type === 'error') {
         msg.innerHTML = `<span class="message-error">⚠️ Error:</span> ${escaped}${imgHtml}`;
       }

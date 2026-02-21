@@ -157,11 +157,11 @@
   <div class="splash">
     <div class="corner-tl"></div>
     <div class="corner-br"></div>
-    <div class="splash-title">🧩 Clone Chat Widget</div>
+    <div class="splash-title"><img id="splashTitleIcon" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;" src="" alt="">Clone Chat Widget</div>
     <div class="splash-body">
-      <div class="logo">🧩</div>
+      <div class="logo"><img id="splashLogo" style="width:64px;height:64px;" src="" alt=""></div>
       <div class="app-name">Clone Chat</div>
-      <div class="version">v1.0.0</div>
+      <div class="version">v2.1.0</div>
       <div class="status" id="status">Initializing...</div>
       <div class="progress-border">
         <div class="progress-track">
@@ -173,6 +173,10 @@
 
   <script>
     const { ipcRenderer } = require('electron');
+    const path = require('path');
+    const logoPath = 'file://' + path.join(__dirname, 'icon.png').replace(/\\/g, '/');
+    document.getElementById('splashTitleIcon').src = logoPath;
+    document.getElementById('splashLogo').src = logoPath;
 
     ipcRenderer.on('splash-status', (event, msg) => {
       document.getElementById('status').textContent = msg;

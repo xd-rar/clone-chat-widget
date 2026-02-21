@@ -1,6 +1,6 @@
 {
   "name": "clone-chat-widget",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Windows 95-styled desktop chat client for OpenClaw agents",
   "main": "main.js",
   "scripts": {
@@ -15,11 +15,16 @@
       "main.js",
       "splash.html",
       "sounds/**",
+      "icon.png",
+      "gold-crown.png",
       "clone-chat-widget.html",
       "package.json"
     ],
     "extraResources": [
-      { "from": "sounds/", "to": "sounds/" }
+      { "from": "sounds/", "to": "sounds/" },
+      { "from": "icon.png", "to": "icon.png" },
+      { "from": "icon.ico", "to": "icon.ico" },
+      { "from": "gold-crown.png", "to": "gold-crown.png" }
     ],
     "win": {
       "target": "dir",

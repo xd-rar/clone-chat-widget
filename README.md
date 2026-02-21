@@ -4,7 +4,7 @@ A Windows 95-styled desktop chat client for [OpenClaw](https://openclaw.ai) agen
 
 ![Clone Chat Widget](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Version](https://img.shields.io/badge/version-2.0.0-orange)
+![Version](https://img.shields.io/badge/version-2.1.0-orange)
 
 ---
 
@@ -222,6 +222,16 @@ clone-chat-widget/
 ---
 
 ## Changelog
+
+### v2.1.0
+- Replaced all puzzle emoji with custom crown logos throughout the UI
+- Gold crown icon for user messages, green crown for assistant responses
+- High-quality multi-size ICO with transparent background for app icon
+- Title bar logo with corrected vertical alignment for bounce animation
+- App icon now works properly in shortcuts and Start Menu entries
+- Sound files and images extracted as real files for reliable loading in packaged exe
+- Button hover and click sound effects (KH Nav Sound / KH Select)
+- Fixed AudioContext suspension blocking sounds on first interaction
 
 ### v2.0.0
 - Added animated splash screen with progress bar

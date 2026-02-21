@@ -1,8 +1,19 @@
 const { app, BrowserWindow } = require('electron');
 const remote = require('@electron/remote/main');
 const path = require('path');
+const fs = require('fs');
 
 remote.initialize();
+
+function getIconPath() {
+  const devPath = path.join(__dirname, 'icon.ico');
+  if (fs.existsSync(devPath)) return devPath;
+  const resPath = path.join(process.resourcesPath, 'icon.ico');
+  if (fs.existsSync(resPath)) return resPath;
+  return devPath;
+}
+
+const appIcon = getIconPath();
 
 let splashWindow;
 let mainWindow;
@@ -21,7 +32,7 @@ function createSplash() {
       nodeIntegration: true,
       contextIsolation: false
     },
-    icon: path.join(__dirname, 'icon.ico')
+    icon: appIcon
   });
 
   splashWindow.loadFile('splash.html');
@@ -82,7 +93,7 @@ function createMainWindow() {
       contextIsolation: false,
       enableRemoteModule: true
     },
-    icon: path.join(__dirname, 'icon.ico')
+    icon: appIcon
   });
 
   remote.enable(mainWindow.webContents);
